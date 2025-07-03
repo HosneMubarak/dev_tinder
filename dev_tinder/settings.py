@@ -132,9 +132,11 @@ SIMPLE_JWT = {
 # dj-rest-auth
 REST_AUTH = {
     "USE_JWT": True,
-    "JWT_AUTH_COOKIE": "_auth",
-    "JWT_AUTH_REFRESH_COOKIE": "_refresh",
-
+    "JWT_AUTH_COOKIE": "_auth",              # access token
+    "JWT_AUTH_REFRESH_COOKIE": "_refresh",  # refresh token
+    "JWT_AUTH_HTTPONLY": True,              # prevents JS access (recommended)
+    "JWT_AUTH_SAMESITE": "Lax",             # or "None" if cross-domain
+    "JWT_AUTH_SECURE": False,               # True in production with HTTPS
 }
 
 # Login with email instead of username
@@ -143,7 +145,10 @@ ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Your React/Vue frontend
+]
 
 
 # Internationalization
