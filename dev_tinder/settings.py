@@ -45,10 +45,16 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'dj_rest_auth.registration'
+    'dj_rest_auth.registration',
+    'feeds'
 ]
 
 SITE_ID = 1
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Your React/Vue frontend
+]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -144,11 +150,8 @@ ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_LOGOUT_ON_GET = True
 
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Your React/Vue frontend
-]
 
 
 # Internationalization
