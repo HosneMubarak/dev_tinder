@@ -12,3 +12,7 @@ class SkillAdmin(admin.ModelAdmin):
 @admin.register(Feed)
 class FeedAdmin(admin.ModelAdmin):
     list_display = ["user", "about"]
+
+@admin.register(ConnectionRequest)
+class ConnectionRequestAdmin(admin.ModelAdmin):
+    list_display = ["from_user", "to_user", "status"]
