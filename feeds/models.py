@@ -4,7 +4,8 @@ from django.db import models
 
 # Create your models here.
 class Feed(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    photo = models.URLField(blank=True, null=True, default="https://www.pngarts.com/files/5/User-Avatar-PNG-Transparent-Image.png")
     about = models.TextField(blank=True, null=True)
 
 
