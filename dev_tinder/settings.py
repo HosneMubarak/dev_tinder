@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'dj_rest_auth.registration',
-    'feeds'
+    'users',
+    'Connection'
 ]
 
 SITE_ID = 1
@@ -124,10 +125,11 @@ REST_FRAMEWORK = {
     )
 }
 
-AUTHENTICATION_BACKENDS = (
-    "django.contrib.auth.backends.ModelBackend",
-    "allauth.account.auth_backends.AuthenticationBackend",
-)
+
+# AUTHENTICATION_BACKENDS = (
+#     "django.contrib.auth.backends.ModelBackend",
+#     "allauth.account.auth_backends.AuthenticationBackend",
+# )
 
 # djangorestframework-simplejwt
 SIMPLE_JWT = {
@@ -138,21 +140,23 @@ SIMPLE_JWT = {
 # dj-rest-auth
 REST_AUTH = {
     "USE_JWT": True,
-    "JWT_AUTH_COOKIE": "_auth",              # access token
+    "JWT_AUTH_COOKIE": "_auth",  # access token
     "JWT_AUTH_REFRESH_COOKIE": "_refresh",  # refresh token
-    "JWT_AUTH_HTTPONLY": True,              # prevents JS access (recommended)
-    "JWT_AUTH_SAMESITE": "Lax",             # or "None" if cross-domain
-    "JWT_AUTH_SECURE": False,               # True in production with HTTPS
+    "JWT_AUTH_HTTPONLY": True,  # prevents JS access (recommended)
+    "JWT_AUTH_SAMESITE": "Lax",  # or "None" if cross-domain
+    "JWT_AUTH_SECURE": False,  # True in production with HTTPS
+    "USER_DETAILS_SERIALIZER": 'users.serializers.CustomUserDetailsSerializer',
+    "REGISTER_SERIALIZER": "users.serializers.CustomRegisterSerializer",
 }
 
+AUTH_USER_MODEL = 'users.CustomUser'
+ACCOUNT_EMAIL_VERIFICATION = "none"
 # Login with email instead of username
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_LOGOUT_ON_GET = True
-
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

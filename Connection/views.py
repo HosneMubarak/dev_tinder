@@ -1,62 +1,16 @@
+from django.contrib.auth import get_user_model
+from django.db import models
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .permissions import IsOwnerOrReadOnly
-from .serializers import *
+from .models import ConnectionRequest
+from .serializers import ConnectionRequestSerializer
+from users.serializers import CustomUserDetailsSerializer
 
-
-class FeedViewSet(viewsets.ModelViewSet):
-    queryset = Feed.objects.select_related('user').prefetch_related('user__skills').all()
-    serializer_class = FeedSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
-
-    def perform_create(self, serializer):
-        if Feed.objects.filter(user=self.request.user).exists():
-            raise ValidationError("You already have a Feed.")
-        serializer.save(user=self.request.user)
-
-
-class SkillViewSet(viewsets.ModelViewSet):
-    queryset = Skill.objects.select_related('user').all()
-    serializer_class = SkillSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-
-class UserFeedViewSet(viewsets.ModelViewSet):
-    serializer_class = UserFeedSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
-
-    def get_queryset(self):
-        return Feed.objects.filter(user=self.request.user)
-
-    def perform_create(self, serializer):
-        if Feed.objects.filter(user=self.request.user).exists():
-            raise ValidationError("You already have a Feed.")
-        serializer.save(user=self.request.user)
-
-    def update(self, request, *args, **kwargs):
-        try:
-            instance = Feed.objects.get(user=request.user)
-        except Feed.DoesNotExist:
-            raise NotFound("Feed not found for the user.")
-
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(
-            {
-                "message": "Feed updated successfully.",
-                "data": serializer.data,
-            },
-            status=status.HTTP_200_OK
-        )
-
+User = get_user_model()
 
 class ConnectionRequestViewSet(viewsets.ModelViewSet):
     serializer_class = ConnectionRequestSerializer
@@ -104,8 +58,8 @@ class ConnectionRequestViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(conn_req)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], url_path="my-connections")
-    def connections(self, request):
+    @action(detail=False, methods=['get'], url_path="accepted-connections")
+    def accepted_connections(self, request):
         """List all accepted connections of the current user"""
         user = request.user
         qs = ConnectionRequest.objects.filter(
@@ -114,4 +68,32 @@ class ConnectionRequestViewSet(viewsets.ModelViewSet):
             models.Q(from_user=user) | models.Q(to_user=user)
         ).order_by('-created')
         serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='explore-users')
+    def explore_users(self, request):
+        """
+        List users who are NOT already connected (any status) with the current user,
+        and exclude the current user.
+        """
+        current_user = request.user
+
+        # Get all users that the current user has any connection with
+        connected_user_ids = ConnectionRequest.objects.filter(
+            models.Q(from_user=current_user) | models.Q(to_user=current_user)
+        ).values_list('from_user', 'to_user')
+
+        # Flatten and deduplicate all related user IDs
+        user_ids = set()
+        for from_id, to_id in connected_user_ids:
+            user_ids.add(from_id)
+            user_ids.add(to_id)
+
+        # Remove current user's ID
+        user_ids.discard(current_user.id)
+
+        # Get users NOT in connection and not the current user
+        qs = User.objects.exclude(id__in=user_ids).exclude(id=current_user.id)
+
+        serializer = CustomUserDetailsSerializer(qs, many=True)
         return Response(serializer.data)
