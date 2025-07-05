@@ -36,3 +36,8 @@ class ConnectionRequestSerializer(serializers.ModelSerializer):
         from_user = self.context['request'].user
         to_user = validated_data['to_user']
         return ConnectionRequest.objects.create(from_user=from_user, to_user=to_user)
+
+class NotInterestedUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotInterestedUser
+        fields = ['id', 'user', 'not_interested_user', 'created']

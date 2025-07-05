@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import *
 
 router = DefaultRouter()
-router.register(r'Connection', ConnectionRequestViewSet, basename='Connection')
+router.register(r'connection', ConnectionRequestViewSet, basename='Connection')
 
 urlpatterns = [
     path('', include(router.urls)),

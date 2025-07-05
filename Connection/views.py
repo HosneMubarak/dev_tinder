@@ -6,7 +6,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import ConnectionRequest
+from .models import ConnectionRequest, NotInterestedUser
 from .serializers import ConnectionRequestSerializer
 from users.serializers import CustomUserDetailsSerializer
 
@@ -72,10 +72,6 @@ class ConnectionRequestViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='explore-users')
     def explore_users(self, request):
-        """
-        List users who are NOT already connected (any status) with the current user,
-        and exclude the current user.
-        """
         current_user = request.user
 
         # Get all users that the current user has any connection with
@@ -83,7 +79,7 @@ class ConnectionRequestViewSet(viewsets.ModelViewSet):
             models.Q(from_user=current_user) | models.Q(to_user=current_user)
         ).values_list('from_user', 'to_user')
 
-        # Flatten and deduplicate all related user IDs
+        # Flatten and deduplicate
         user_ids = set()
         for from_id, to_id in connected_user_ids:
             user_ids.add(from_id)
@@ -92,8 +88,30 @@ class ConnectionRequestViewSet(viewsets.ModelViewSet):
         # Remove current user's ID
         user_ids.discard(current_user.id)
 
-        # Get users NOT in connection and not the current user
-        qs = User.objects.exclude(id__in=user_ids).exclude(id=current_user.id)
+        # Get not interested users
+        not_interested_ids = NotInterestedUser.objects.filter(
+            user=current_user
+        ).values_list('not_interested_user', flat=True)
+
+        # Exclude connected, not interested, and self
+        qs = User.objects.exclude(id__in=user_ids).exclude(id__in=not_interested_ids).exclude(id=current_user.id)
 
         serializer = CustomUserDetailsSerializer(qs, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path="not-interested")
+    def mark_not_interested(self, request, pk=None):
+        try:
+            not_interested_user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            raise NotFound("User not found.")
+
+        if not_interested_user == request.user:
+            return Response({"detail": "You cannot mark yourself as not interested."}, status=400)
+
+        obj, created = NotInterestedUser.objects.get_or_create(
+            user=request.user,
+            not_interested_user=not_interested_user
+        )
+
+        return Response({"detail": "User marked as not interested."}, status=200 if created else 204)

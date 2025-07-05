@@ -13,3 +13,14 @@ class ConnectionRequest(models.Model):
 
     def __str__(self):
         return self.from_user.username + "==>" + self.to_user.username
+
+class NotInterestedUser(models.Model):
+    user = models.ForeignKey(User, related_name='not_interested_by', on_delete=models.CASCADE)
+    not_interested_user = models.ForeignKey(User, related_name='not_interested_users', on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'not_interested_user')
+
+    def __str__(self):
+        return f"{self.user.username} is not interested in {self.not_interested_user.username}"
